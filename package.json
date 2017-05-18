@@ -1,0 +1,19 @@
+{
+  "name": "blackchamber",
+  "version": "0.0.0",
+  "description": "Simple confidentiality and message integrity via NaCl as Express middleware.",
+  "main": "lib/bc.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "author": "Samuel Judson",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-express-handler": "0.0.2",
+    "mocha": "^3.4.1"
+  },
+  "dependencies": {
+    "libsodium": "^0.5.1"
+  }
+}
