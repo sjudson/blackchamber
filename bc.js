@@ -25,7 +25,7 @@ function sinit(config) {
 
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
-    
+
     var m = libsodium.crypto_secretbox_open_easy(c, n, k);
     return m;
   }
@@ -60,7 +60,7 @@ function ainit(config) {
 
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
-    
+
     var m = libsodium.crypto_secretbox_open_easy(c, n, k);
     return m;
   }
@@ -82,18 +82,35 @@ function ainit(config) {
 function bc(config) {
   config = config || {};
 
-  var [symE, symD] = sinit(config.symmetric);
-  var [asyE, asyD] = ainit(config.asymmetric);
+  var registry = new Object();
 
-  var registry = {
-    sym: {
-      e: symE,
-      d: symD
-    },
-    asy: {
-      e: asyE,
-      d: asyD
-    }
+  if (config.symmetric) {
+    var [symE, symD] = sinit(config.symmetric);
+
+    registry['sym'] = { e: symE, d: symD };
+  }
+
+  if (config.asymmetric) {
+    var [asyE, asyD] = sinit(config.asymmetric);
+
+    registry['asy'] = { e: asyE, d: asyD };
+  }
+
+
+  /**
+   * infer
+   *
+   * Infer the type if only one registry.
+   *
+   * @param {Object} registry
+   * @api private
+   *
+   */
+  function infer(registry) {
+    var cabinets = Object.keys(registry);
+    if (cabinets.length === 1) { return cabinets.pop(); }
+
+    return;
   }
 
 
@@ -123,18 +140,22 @@ function bc(config) {
       throw new Error('Unable to operate on an empty message.');
     }
 
+    type = type || infer(registry);
+
     if (!type || ['sym', 'asy'].indexOf(type) === -1) {
       throw new Error('Please specify \'sym\' (symmetric) or \'asy\' (asymmetric) as the type.');
     }
 
+    var base = registry[type];
+    if (!base) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
 
     // determine operation and launch
     var operation = (nonce) ? 'd' : 'e';
 
     if (operation === 'e') {
-      registry[type]['e'](message);
+      base['e'](message);
     } else {  // operation === 'd'
-      registry[type]['d'](message, nonce);
+      base['d'](message, nonce);
     }
   }
 
