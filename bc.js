@@ -1,4 +1,4 @@
-const libsodium = require('libsodium');
+const libsodium = require('libsodium-wrappers');
 
 
 /**

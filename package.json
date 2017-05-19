@@ -14,6 +14,7 @@
     "mocha": "^3.4.1"
   },
   "dependencies": {
-    "libsodium": "^0.5.1"
+    "libsodium": "^0.5.1",
+    "libsodium-wrappers": "^0.5.1"
   }
 }
