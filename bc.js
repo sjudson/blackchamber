@@ -12,13 +12,13 @@ const libsodium = require('libsodium-wrappers');
  */
 function sinit(config) {
   config = config || {};
-  var k  = config.key;
+  var k  = libsodium.from_hex(config.key);
 
   if (!k) { throw new Error('Symmetric key cabinet cannot be used without secret key.'); }
 
   function enc(m) {
     var n = libsodium.randombytes(libsodium._crypto_secretbox_noncebytes());
-    var c = libsodium.crypto_secretbox_easy(m, n, k);
+    var c = libsodium.crypto_secretbox_easy(m, n, k, 'hex');
 
     return [c, n];
   }
@@ -26,7 +26,7 @@ function sinit(config) {
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
 
-    var m = libsodium.crypto_secretbox_open_easy(c, n, k);
+    var m = libsodium.crypto_secretbox_open_easy(c, n, k, 'hex');
     return m;
   }
 
@@ -45,15 +45,15 @@ function sinit(config) {
  */
 function ainit(config) {
   config = config || {};
-  var sk = config.privateKey || config.secretKey || config.sk;
-  var pk = config.publicKey  || config.pk;
+  var sk = libsodium.from_hex(config.privateKey || config.secretKey || config.sk);
+  var pk = libsodium.from_hex(config.publicKey  || config.pk);
 
   if (!sk) { throw new Error('Asymmetric key cabinet cannot be used without private (secret) key.'); }
   if (!pk) { throw new Error('Asymmetric key cabinet cannot be used without public key.'); }
 
   function enc(m) {
     var n = libsodium.randombytes(libsodium._crypto_box_noncebytes());
-    var c = libsodium.crypto_box_easy(m, n, pk, sk);
+    var c = libsodium.crypto_box_easy(m, n, pk, sk, 'hex');
 
     return [c, n];
   }
@@ -61,7 +61,7 @@ function ainit(config) {
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
 
-    var m = libsodium.crypto_secretbox_open_easy(c, n, k);
+    var m = libsodium.crypto_secretbox_open_easy(c, n, k, 'hex');
     return m;
   }
 
