@@ -169,4 +169,12 @@ function bc(config) {
 }
 
 
-module.exports = bc;
+exports = module.exports = bc;
+
+exports.symkg = () => {
+  return { key: libsodium.crypto_secretbox_keygen('hex'), keyType: 'salsa20poly1305'};
+};
+
+exports.asykg = () => {
+  return libsodium.crypto_box_keypair('hex');
+};
