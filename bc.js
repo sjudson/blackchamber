@@ -51,6 +51,10 @@ function ainit(config) {
   if (!sk) { throw new Error('Asymmetric key cabinet cannot be used without private (secret) key.'); }
   if (!pk) { throw new Error('Asymmetric key cabinet cannot be used without public key.'); }
 
+  if (libsodium.crypto_scalarmult_base(sk, 'hex') === pk) {
+    throw new Error('Invalid asymmetric key cabinet initialization: bound keypair.');
+  }
+
   function enc(m) {
     var n = libsodium.randombytes(libsodium._crypto_box_noncebytes());
     var c = libsodium.crypto_box_easy(m, n, pk, sk, 'hex');
