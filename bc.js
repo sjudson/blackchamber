@@ -12,9 +12,11 @@ const libsodium = require('libsodium-wrappers');
  */
 function sinit(config) {
   config = config || {};
-  var k  = libsodium.from_hex(config.key);
+  var k  = config.key;
 
   if (!k) { throw new Error('Symmetric key cabinet cannot be used without secret key.'); }
+  k = libsodium.from_hex(k);
+
 
   function enc(m) {
     var n = libsodium.randombytes(libsodium._crypto_secretbox_noncebytes());
@@ -23,12 +25,14 @@ function sinit(config) {
     return [c, n];
   }
 
+
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
 
     var m = libsodium.crypto_secretbox_open_easy(c, n, k, 'hex');
     return m;
   }
+
 
   return [enc, dec];
 }
@@ -45,15 +49,19 @@ function sinit(config) {
  */
 function ainit(config) {
   config = config || {};
-  var sk = libsodium.from_hex(config.privateKey || config.secretKey || config.sk);
-  var pk = libsodium.from_hex(config.publicKey  || config.pk);
+  var sk = config.privateKey || config.secretKey || config.sk;
+  var pk = config.publicKey  || config.pk;
 
   if (!sk) { throw new Error('Asymmetric key cabinet cannot be used without private (secret) key.'); }
-  if (!pk) { throw new Error('Asymmetric key cabinet cannot be used without public key.'); }
+  sk = libsodium.from_hex(sk);
 
-  if (libsodium.crypto_scalarmult_base(sk, 'hex') === pk) {
+  if (!pk) { throw new Error('Asymmetric key cabinet cannot be used without public key.'); }
+  pk = libsodium.from_hex(pk);
+
+  if (libsodium.compare(libsodium.crypto_scalarmult_base(sk), pk) === 0) {
     throw new Error('Invalid asymmetric key cabinet initialization: bound keypair.');
   }
+
 
   function enc(m) {
     var n = libsodium.randombytes(libsodium._crypto_box_noncebytes());
@@ -62,12 +70,14 @@ function ainit(config) {
     return [c, n];
   }
 
+
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
 
     var m = libsodium.crypto_secretbox_open_easy(c, n, k, 'hex');
     return m;
   }
+
 
   return [enc, dec];
 }
@@ -95,10 +105,13 @@ function bc(config) {
   }
 
   if (config.asymmetric) {
-    var [asyE, asyD] = sinit(config.asymmetric);
+    var [asyE, asyD] = ainit(config.asymmetric);
 
     registry['asy'] = { e: asyE, d: asyD };
   }
+
+  var cabinets = Object.keys(registry);
+  if (cabinets.length < 1) { throw new Error('Configuration objects required for middleware.'); }
 
 
   /**
@@ -111,9 +124,7 @@ function bc(config) {
    *
    */
   function infer(registry) {
-    var cabinets = Object.keys(registry);
     if (cabinets.length === 1) { return cabinets.pop(); }
-
     return;
   }
 
@@ -137,7 +148,6 @@ function bc(config) {
       type  = nonce;
       nonce = undefined;
     }
-
 
     // handle invalid arguments
     if (!message) {
