@@ -151,12 +151,13 @@ function bc(config) {
       message = JSON.stringify(message);
     }
 
-    if (!type || ['sym', 'asy'].indexOf(type) === -1) {
+    // if we only have one cabinet we will infer it for use
+    if (cabinets.length > 1 && (!type || ['sym', 'asy'].indexOf(type) === -1)) {
       throw new Error('Please specify \'sym\' (symmetric) or \'asy\' (asymmetric) as the type.');
     }
 
     // prepare and launch the cryptographic operation
-    var base = registry[type];
+    var base = (type) ? registry[type] : registry[cabinets[0]];
     if (!base) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
 
     var operation = (nonce) ? 'd' : 'e';

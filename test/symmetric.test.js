@@ -96,6 +96,37 @@ describe('symmetric keys', function() {
 	  done();
 	});
       });
+
+      describe('with inferred cabinet', function() {
+
+	var response;
+	var plaintext = 'thisisatestplaintext';
+
+	before(function(done) {
+	  var handler = encHandler(plaintext);
+
+	  chai.express.handler(handler)
+	    .end(function(res) {
+	      response = res;
+	      done();
+	    })
+	    .dispatch();
+	});
+
+	it('should return ciphertext and nonce', function(done) {
+	  assert.ok(response);
+	  assert.equal(response.statusCode, 200);
+	  assert.equal(typeof response, 'object');
+
+	  assert.ok(response.body.ciphertext);
+	  assert.ok(/[0-9a-f]{64}/.exec(response.body.ciphertext));
+
+	  assert.ok(response.body.nonce);
+	  assert.ok(/[0-9a-f]{48}/.exec(response.body.nonce));
+
+	  done();
+	});
+      });
     });
 
     describe('decryption', function() {
@@ -187,6 +218,34 @@ describe('symmetric keys', function() {
 
 	  assert.ok(response.body.plaintext);
 	  assert.equal(response.body.plaintext, JSON.stringify(plaintext)); // TODO: compare objects properly
+
+	  done();
+	});
+      });
+
+      describe('with inferred cabinet', function() {
+
+	var response;
+	var plaintext = 'thisisatestplaintext';
+
+	before(function(done) {
+	  var handler = decHandler(plaintext);
+
+	  chai.express.handler(handler)
+	    .end(function(res) {
+	      response = res;
+	      done();
+	    })
+	    .dispatch();
+	});
+
+	it('should return ciphertext and nonce', function(done) {
+	  assert.ok(response);
+	  assert.equal(response.statusCode, 200);
+	  assert.equal(typeof response, 'object');
+
+	  assert.ok(response.body.plaintext);
+	  assert.equal(response.body.plaintext, plaintext);
 
 	  done();
 	});
