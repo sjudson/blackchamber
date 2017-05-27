@@ -5,8 +5,8 @@ const bc   = require('../bc');
 
 describe('configuration', function() {
 
-  it('should export a unary function', function(done) {
-    assert.equal(bc.length, 1);
+  it('should export a binary function', function(done) {
+    assert.equal(bc.length, 2);
     return done();
   });
 
@@ -20,6 +20,18 @@ describe('configuration', function() {
       return done();
     }
 
+  });
+
+  it('should use name if provided', function(done) {
+    var req = {};
+
+    var middleware = bc('somename', { symmetric: { key: keys.secretkey } });
+    middleware(req, {}, () => {});
+
+    assert.ok(req.somename);
+    assert.ok(!req.bc);
+
+    return done();
   });
 
   describe('for symmetric cabinet', function() {

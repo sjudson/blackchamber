@@ -100,7 +100,11 @@ function ainit(config) {
  * @api public
  *
  */
-function bc(config) {
+function bc(name, config) {
+  if (typeof name === 'object') {
+    config = name;
+    name = undefined;
+  }
   config = config || {};
 
   var registry = new Object();
@@ -171,7 +175,11 @@ function bc(config) {
 
 
   return function(req, res, next) {
-    req.bc = cabinetNoir;
+    if (name) {
+      req[name] = cabinetNoir;
+    } else {
+      req.bc = cabinetNoir;
+    }
 
     next();
   };
