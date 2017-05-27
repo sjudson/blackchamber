@@ -154,16 +154,22 @@ function bc(config) {
       throw new Error('Unable to operate on an empty message.');
     }
 
+    // if message is an object, stringify it
+    if (typeof message === 'object') {
+      message = JSON.stringify(message);
+    }
+
+    // determine the type of cabinet to use
     type = type || infer(registry);
 
     if (!type || ['sym', 'asy'].indexOf(type) === -1) {
       throw new Error('Please specify \'sym\' (symmetric) or \'asy\' (asymmetric) as the type.');
     }
 
+    // prepare and launch the cryptographic operation
     var base = registry[type];
     if (!base) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
 
-    // determine operation and launch
     var operation = (nonce) ? 'd' : 'e';
 
     if (operation === 'e') {
