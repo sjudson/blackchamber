@@ -1,8 +1,9 @@
 TESTS = test/*.test.js test/**/*.test.js
 MOCHA = node_modules/.bin/mocha
+MOD   = --require test/support/bootstrap.js
 
 test:
-	$(MOCHA) $(TESTS)
+	$(MOCHA) $(MOD) $(TESTS)
 
 remove:
 	-rm -r node_modules

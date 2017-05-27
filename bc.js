@@ -1,4 +1,5 @@
 const libsodium = require('libsodium-wrappers');
+const sodium    = require('libsodium');
 
 
 /**
@@ -19,17 +20,20 @@ function sinit(config) {
 
 
   function enc(m) {
-    var n = libsodium.randombytes(libsodium._crypto_secretbox_noncebytes());
-    var c = libsodium.crypto_secretbox_easy(m, n, k, 'hex');
+    var n = libsodium.randombytes_buf(sodium._crypto_secretbox_noncebytes());
+    var nout = libsodium.to_hex(n);
 
-    return [c, n];
+    var c = libsodium.crypto_secretbox_easy(m, n, k, 'hex');
+    return [c, nout];
   }
 
 
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
+    var cin = libsodium.from_hex(c);
+    var nin = libsodium.from_hex(n);
 
-    var m = libsodium.crypto_secretbox_open_easy(c, n, k, 'hex');
+    var m = libsodium.crypto_secretbox_open_easy(cin, nin, k, 'text');
     return m;
   }
 
@@ -64,17 +68,20 @@ function ainit(config) {
 
 
   function enc(m) {
-    var n = libsodium.randombytes(libsodium._crypto_box_noncebytes());
-    var c = libsodium.crypto_box_easy(m, n, pk, sk, 'hex');
+    var n = libsodium.randombytes_buf(sodium._crypto_box_noncebytes());
+    var nout = libsodium.to_hex(n);
 
-    return [c, n];
+    var c = libsodium.crypto_box_easy(m, n, pk, sk, 'hex');
+    return [c, nout];
   }
 
 
   function dec(c, n) {
     if (!n) { throw new Error('Nonce argument required for decryption.'); }
+    var cin = libsodium.from_hex(c);
+    var nin = libsodium.from_hex(n);
 
-    var m = libsodium.crypto_secretbox_open_easy(c, n, k, 'hex');
+    var m = libsodium.crypto_secretbox_open_easy(cin, nin, k, 'text');
     return m;
   }
 
@@ -115,29 +122,14 @@ function bc(config) {
 
 
   /**
-   * infer
-   *
-   * Infer the type if only one registry.
-   *
-   * @param {Object} registry
-   * @api private
-   *
-   */
-  function infer(registry) {
-    if (cabinets.length === 1) { return cabinets.pop(); }
-    return;
-  }
-
-
-  /**
    * cabinetNoir
    *
    * Translated as Black Chamber, the function exposed
    * at req.bc which may be used to encrypt or decrypt
    * blobs.
    *
-   * @param {string|Uint8Array} message
-   * @param {string|Uint8Array} nonce
+   * @param {object|string} message
+   * @param {string} nonce
    * @param {string} type
    * @api private
    *
@@ -159,9 +151,6 @@ function bc(config) {
       message = JSON.stringify(message);
     }
 
-    // determine the type of cabinet to use
-    type = type || infer(registry);
-
     if (!type || ['sym', 'asy'].indexOf(type) === -1) {
       throw new Error('Please specify \'sym\' (symmetric) or \'asy\' (asymmetric) as the type.');
     }
@@ -173,9 +162,9 @@ function bc(config) {
     var operation = (nonce) ? 'd' : 'e';
 
     if (operation === 'e') {
-      base['e'](message);
+      return base['e'](message);
     } else {  // operation === 'd'
-      base['d'](message, nonce);
+      return base['d'](message, nonce);
     }
   }
 
@@ -192,7 +181,7 @@ function bc(config) {
 exports = module.exports = bc;
 
 exports.symkg = () => {
-  return { key: libsodium.crypto_secretbox_keygen('hex'), keyType: 'salsa20poly1305'};
+  return { key: libsodium.crypto_secretbox_keygen('hex'), keyType: 'salsa20poly1305' };
 };
 
 exports.asykg = () => {
