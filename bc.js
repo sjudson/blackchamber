@@ -28,6 +28,7 @@ function format(ciphertext, nonce) {
  */
 function parse(input) {
   if (typeof input === 'object') { return [ input, null ]; }
+  // handle non-strings?
 
   var match = /bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(input);
   if (!match) { return [ input, null ]; }
@@ -113,7 +114,7 @@ function ainit(config) {
     var cin = libsodium.from_hex(c);
     var nin = libsodium.from_hex(n);
 
-    var m = libsodium.crypto_secretbox_open_easy(cin, nin, k, 'text');
+    var m = libsodium.crypto_box_open_easy(cin, nin, pk, sk, 'text');
     return m;
   }
 
