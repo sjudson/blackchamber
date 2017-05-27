@@ -40,7 +40,7 @@ describe('configuration', function() {
       var req = {};
 
       try {
-	var middleware = bc({ symmetric: { key: 'nonbase64encodedkey' } });
+	var middleware = bc({ symmetric: { key: 'nonhexencodedkey' } });
       } catch(ex) {
 	assert.equal(ex.message, 'The provided string doesn\'t look like hex data');
         return done();
@@ -90,7 +90,7 @@ describe('configuration', function() {
       var req = {};
 
       try {
-	var middleware = bc({ asymmetric: { privateKey: 'nonbase64encodedkey', publicKey: keys.r_publickey } });
+	var middleware = bc({ asymmetric: { privateKey: 'nonhexencodedkey', publicKey: keys.r_publickey } });
       } catch(ex) {
 	assert.equal(ex.message, 'The provided string doesn\'t look like hex data');
         return done();
@@ -114,7 +114,7 @@ describe('configuration', function() {
       var req = {};
 
       try {
-	var middleware = bc({ asymmetric: { privateKey: keys.s_privatekey, publicKey: 'nonbase64encodedkey' } });
+	var middleware = bc({ asymmetric: { privateKey: keys.s_privatekey, publicKey: 'nonhexencodedkey' } });
       } catch(ex) {
 	assert.equal(ex.message, 'The provided string doesn\'t look like hex data');
 	return done();
