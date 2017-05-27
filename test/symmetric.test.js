@@ -16,21 +16,17 @@ describe('symmetric keys', function() {
 	  bc({ symmetric: { key: keys.secretkey } }),
 	  function(req, res, next) {
 	    try {
-	      var [c, n] = req.bc(message, type);
+	      var c = req.bc(message, type);
 	    } catch(ex) {
 	      return next(ex);
 	    }
 
 	    req.c = c;
-	    req.n = n;
 
 	    next();
 	  },
 	  function(req, res) {
-	    res.status(200).json({ ciphertext: req.c, nonce: req.n });
-	  },
-	  function(err, req, res, next) {
-	    res.status(400).json({ error: err.message });
+	    res.status(200).json({ ciphertext: req.c });
 	  }
 	];
       };
@@ -57,10 +53,7 @@ describe('symmetric keys', function() {
 	  assert.equal(typeof response, 'object');
 
 	  assert.ok(response.body.ciphertext);
-	  assert.ok(/[0-9a-f]{64}/.exec(response.body.ciphertext));
-
-	  assert.ok(response.body.nonce);
-	  assert.ok(/[0-9a-f]{48}/.exec(response.body.nonce));
+	  assert.ok(/bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
 
 	  done();
 	});
@@ -88,10 +81,7 @@ describe('symmetric keys', function() {
 	  assert.equal(typeof response, 'object');
 
 	  assert.ok(response.body.ciphertext);
-	  assert.ok(/[0-9a-f]{64}/.exec(response.body.ciphertext));
-
-	  assert.ok(response.body.nonce);
-	  assert.ok(/[0-9a-f]{48}/.exec(response.body.nonce));
+	  assert.ok(/bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
 
 	  done();
 	});
@@ -119,10 +109,7 @@ describe('symmetric keys', function() {
 	  assert.equal(typeof response, 'object');
 
 	  assert.ok(response.body.ciphertext);
-	  assert.ok(/[0-9a-f]{64}/.exec(response.body.ciphertext));
-
-	  assert.ok(response.body.nonce);
-	  assert.ok(/[0-9a-f]{48}/.exec(response.body.nonce));
+	  assert.ok(/bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
 
 	  done();
 	});
@@ -137,19 +124,18 @@ describe('symmetric keys', function() {
 	  bc({ symmetric: { key: keys.secretkey } }),
 	  function(req, res, next) {
 	    try {
-	      var [c, n] = req.bc(message, type);
+	      var c = req.bc(message, type);
 	    } catch(ex) {
 	      return next(ex);
 	    }
 
 	    req.c = c;
-	    req.n = n;
 
 	    next();
 	  },
 	  function(req, res, next) {
 	    try {
-	      var m = req.bc(req.c, req.n, type);
+	      var m = req.bc(req.c, type);
 	    } catch(ex) {
 	      return next(ex);
 	    }
@@ -160,9 +146,6 @@ describe('symmetric keys', function() {
 	  },
 	  function(req, res) {
 	    res.status(200).json({ plaintext: req.m });
-	  },
-	  function(err, req, res, next) {
-	    res.status(400).json({ error: err.message });
 	  }
 	];
       };
@@ -246,6 +229,89 @@ describe('symmetric keys', function() {
 
 	  assert.ok(response.body.plaintext);
 	  assert.equal(response.body.plaintext, plaintext);
+
+	  done();
+	});
+      });
+    });
+  });
+
+  describe('failure', function() {
+
+    describe('encryption', function() {
+
+      describe('without plaintext', function() {
+
+	before(function (done) {
+	  var handler = [
+	    bc({ symmetric: { key: keys.secretkey } }),
+	    function(req, res, next) {
+	      try {
+		var [c, n] = req.bc();
+	      } catch(ex) {
+		return next(ex);
+	      }
+	    },
+	    function(err, req, res, next) {
+	      res.status(400).json({ error: err.message });
+	    }
+	  ];
+
+	  chai.express.handler(handler)
+	    .end(function(res) {
+	      response = res;
+	      done();
+	    })
+	    .dispatch();
+	});
+
+	it('should error', function(done){
+	  assert.ok(response);
+	  assert.equal(response.statusCode, 400);
+	  assert.equal(typeof response, 'object');
+
+	  assert.ok(response.body.error);
+	  assert.equal(response.body.error, 'Unable to operate on an empty message.');
+
+	  done();
+	});
+      });
+    });
+
+    describe('decryption', function() {
+
+      describe('without ciphertext', function() {
+
+	before(function(done) {
+	  var handler = [
+	    bc({ symmetric: { key: keys.secretkey } }),
+	    function(req, res, next) {
+	      try {
+		var m = req.bc();
+	      } catch(ex) {
+		return next(ex);
+	      }
+	    },
+	    function(err, req, res, next) {
+	      res.status(400).json({ error: err.message });
+	    }
+	  ];
+
+	  chai.express.handler(handler)
+	    .end(function(res) {
+	      response = res;
+	      done();
+	    })
+	    .dispatch();
+	});
+
+	it('should error', function(done){
+	  assert.ok(response);
+	  assert.equal(response.statusCode, 400);
+	  assert.equal(typeof response, 'object');
+
+	  assert.ok(response.body.error);
+	  assert.equal(response.body.error, 'Unable to operate on an empty message.');
 
 	  done();
 	});

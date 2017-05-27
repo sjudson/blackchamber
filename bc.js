@@ -3,6 +3,40 @@ const sodium    = require('libsodium');
 
 
 /**
+ * format
+ *
+ * format ciphertexts
+ *
+ * @param {string} ciphertext
+ * @param {string} nonce
+ * @api private
+ *
+ */
+function format(ciphertext, nonce) {
+  return 'bc*' + ciphertext + '*' + nonce;
+}
+
+
+/**
+ * parse
+ *
+ * parse ciphertexts
+ *
+ * @param {object|string} input
+ * @api private
+ *
+ */
+function parse(input) {
+  if (typeof input === 'object') { return [ input, null ]; }
+
+  var match = /bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(input);
+  if (!match) { return [ input, null ]; }
+
+  return [ match[1], match[2] ];
+}
+
+
+/**
  * sinit
  *
  * Initialize the symmetric cabinet.
@@ -24,12 +58,11 @@ function sinit(config) {
     var nout = libsodium.to_hex(n);
 
     var c = libsodium.crypto_secretbox_easy(m, n, k, 'hex');
-    return [c, nout];
+    return format(c, nout);
   }
 
 
   function dec(c, n) {
-    if (!n) { throw new Error('Nonce argument required for decryption.'); }
     var cin = libsodium.from_hex(c);
     var nin = libsodium.from_hex(n);
 
@@ -72,12 +105,11 @@ function ainit(config) {
     var nout = libsodium.to_hex(n);
 
     var c = libsodium.crypto_box_easy(m, n, pk, sk, 'hex');
-    return [c, nout];
+    return format(c, nout);
   }
 
 
   function dec(c, n) {
-    if (!n) { throw new Error('Nonce argument required for decryption.'); }
     var cin = libsodium.from_hex(c);
     var nin = libsodium.from_hex(n);
 
@@ -138,12 +170,8 @@ function bc(name, config) {
    * @api private
    *
    */
-  function cabinetNoir(message, nonce, type) {
-    var arity = arguments.length;
-    if (arity === 2) {
-      type  = nonce;
-      nonce = undefined;
-    }
+  function cabinetNoir(message, type) {
+    var [message, nonce] = parse(message);
 
     // handle invalid arguments
     if (!message) {
