@@ -183,7 +183,7 @@ describe('symmetric keys', function() {
 	    .dispatch();
 	});
 
-	it('should return ciphertext and nonce', function(done) {
+	it('should return plaintext', function(done) {
 	  assert.ok(response);
 	  assert.equal(response.statusCode, 200);
 	  assert.equal(typeof response, 'object');
@@ -211,7 +211,7 @@ describe('symmetric keys', function() {
 	    .dispatch();
 	});
 
-	it('should return ciphertext and nonce', function(done) {
+	it('should return plaintext', function(done) {
 	  assert.ok(response);
 	  assert.equal(response.statusCode, 200);
 	  assert.equal(typeof response, 'object');
@@ -239,7 +239,7 @@ describe('symmetric keys', function() {
 	    .dispatch();
 	});
 
-	it('should return ciphertext and nonce', function(done) {
+	it('should return plaintext', function(done) {
 	  assert.ok(response);
 	  assert.equal(response.statusCode, 200);
 	  assert.equal(typeof response, 'object');
