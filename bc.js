@@ -7,8 +7,8 @@ const sodium    = require('libsodium');
  *
  * format ciphertexts
  *
- * @param {string} ciphertext
- * @param {string} nonce
+ * @param {String} ciphertext
+ * @param {String} nonce
  * @api private
  *
  */
@@ -22,7 +22,7 @@ function format(ciphertext, nonce) {
  *
  * parse ciphertexts
  *
- * @param {object|string} input
+ * @param {Object|String} input
  * @api private
  *
  */
@@ -128,6 +128,7 @@ function ainit(config) {
  * The main function, configures the cabinet and returns
  * the middleware that adds it to the express req object.
  *
+ * @param {String} name
  * @param {Object} config
  * @api public
  *
@@ -229,8 +230,8 @@ function bc(name, config) {
    *
    * decrypt a message using the denoted cabinet
    *
-   * @param {Object|String} arg
-   * @param {Object|String} opt
+   * @param {String} arg
+   * @param {String} opt
    * @api public
    *
    */
