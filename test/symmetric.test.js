@@ -4,19 +4,19 @@ const chai   = require('chai');
 const keys = require('./support/keys');
 const bc   = require('../bc');
 
-describe('symmetric keys', function() {
+describe('symmetric keys (direct mode)', function() {
 
   describe('success', function() {
 
     describe('encryption', function() {
 
       // express middleware chain for encryption tests
-      function encHandler(message, type) {
+      function encHandler(message) {
 	return [
 	  bc({ symmetric: { key: keys.secretkey } }),
 	  function(req, res, next) {
 	    try {
-	      var c = req.bc(message, type);
+	      var c = req.bc.encrypt(message);
 	    } catch(ex) {
 	      return next(ex);
 	    }
@@ -32,62 +32,6 @@ describe('symmetric keys', function() {
       };
 
       describe('of string input', function() {
-
-	var response;
-	var plaintext = 'thisisatestplaintext';
-
-	before(function(done) {
-	  var handler = encHandler(plaintext, 'sym');
-
-	  chai.express.handler(handler)
-	    .end(function(res) {
-	      response = res;
-	      done();
-	    })
-	    .dispatch();
-	});
-
-	it('should return ciphertext and nonce', function(done) {
-	  assert.ok(response);
-	  assert.equal(response.statusCode, 200);
-	  assert.equal(typeof response, 'object');
-
-	  assert.ok(response.body.ciphertext);
-	  assert.ok(/bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
-
-	  done();
-	});
-      });
-
-      describe('of object input', function() {
-
-	var response;
-	var plaintext = { thisis: 'atestobject', withinteger: 123, and: { sub: 'objects' } };
-
-	before(function(done) {
-	  var handler = encHandler(plaintext, 'sym');
-
-	  chai.express.handler(handler)
-	    .end(function(res) {
-	      response = res;
-	      done();
-	    })
-	    .dispatch();
-	});
-
-	it('should return ciphertext and nonce', function(done) {
-	  assert.ok(response);
-	  assert.equal(response.statusCode, 200);
-	  assert.equal(typeof response, 'object');
-
-	  assert.ok(response.body.ciphertext);
-	  assert.ok(/bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
-
-	  done();
-	});
-      });
-
-      describe('with inferred cabinet', function() {
 
 	var response;
 	var plaintext = 'thisisatestplaintext';
@@ -109,7 +53,35 @@ describe('symmetric keys', function() {
 	  assert.equal(typeof response, 'object');
 
 	  assert.ok(response.body.ciphertext);
-	  assert.ok(/bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
+	  assert.ok(/([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
+
+	  done();
+	});
+      });
+
+      describe('of object input', function() {
+
+	var response;
+	var plaintext = { thisis: 'atestobject', withinteger: 123, and: { sub: 'objects' } };
+
+	before(function(done) {
+	  var handler = encHandler(plaintext);
+
+	  chai.express.handler(handler)
+	    .end(function(res) {
+	      response = res;
+	      done();
+	    })
+	    .dispatch();
+	});
+
+	it('should return ciphertext and nonce', function(done) {
+	  assert.ok(response);
+	  assert.equal(response.statusCode, 200);
+	  assert.equal(typeof response, 'object');
+
+	  assert.ok(response.body.ciphertext);
+	  assert.ok(/([0-9a-f]+)\*([0-9a-f]{48})/.exec(response.body.ciphertext));
 
 	  done();
 	});
@@ -119,12 +91,12 @@ describe('symmetric keys', function() {
     describe('decryption', function() {
 
       // express middleware chain for decryption tests
-      function decHandler(message, type) {
+      function decHandler(message, split) {
 	return [
 	  bc({ symmetric: { key: keys.secretkey } }),
 	  function(req, res, next) {
 	    try {
-	      var c = req.bc(message, type);
+	      var c = req.bc.encrypt(message);
 	    } catch(ex) {
 	      return next(ex);
 	    }
@@ -135,7 +107,12 @@ describe('symmetric keys', function() {
 	  },
 	  function(req, res, next) {
 	    try {
-	      var m = req.bc(req.c, type);
+	      if (split) {
+		[req.c, req.n] = req.c.split('*');
+		var m = req.bc.decrypt(req.c,  req.n);
+	      } else {
+		var m = req.bc.decrypt(req.c);
+	      }
 	    } catch(ex) {
 	      return next(ex);
 	    }
@@ -156,7 +133,7 @@ describe('symmetric keys', function() {
 	var plaintext = 'thisisatestplaintext';
 
 	before(function(done) {
-	  var handler = decHandler(plaintext, 'sym');
+	  var handler = decHandler(plaintext);
 
 	  chai.express.handler(handler)
 	    .end(function(res) {
@@ -184,7 +161,7 @@ describe('symmetric keys', function() {
 	var plaintext = { thisis: 'atestobject', withinteger: 123, and: { sub: 'objects' } };
 
 	before(function(done) {
-	  var handler = decHandler(plaintext, 'sym');
+	  var handler = decHandler(plaintext);
 
 	  chai.express.handler(handler)
 	    .end(function(res) {
@@ -206,13 +183,13 @@ describe('symmetric keys', function() {
 	});
       });
 
-      describe('with inferred cabinet', function() {
+      describe('with split ciphertext and nonce', function() {
 
 	var response;
 	var plaintext = 'thisisatestplaintext';
 
 	before(function(done) {
-	  var handler = decHandler(plaintext);
+	  var handler = decHandler(plaintext, true);
 
 	  chai.express.handler(handler)
 	    .end(function(res) {
@@ -247,7 +224,7 @@ describe('symmetric keys', function() {
 	    bc({ symmetric: { key: keys.secretkey } }),
 	    function(req, res, next) {
 	      try {
-		var [c, n] = req.bc();
+		var [c, n] = req.bc.encrypt();
 	      } catch(ex) {
 		return next(ex);
 	      }
@@ -287,7 +264,7 @@ describe('symmetric keys', function() {
 	    bc({ symmetric: { key: keys.secretkey } }),
 	    function(req, res, next) {
 	      try {
-		var m = req.bc();
+		var m = req.bc.decrypt();
 	      } catch(ex) {
 		return next(ex);
 	      }
@@ -312,6 +289,43 @@ describe('symmetric keys', function() {
 
 	  assert.ok(response.body.error);
 	  assert.equal(response.body.error, 'Unable to operate on an empty message.');
+
+	  done();
+	});
+      });
+
+      describe('without nonce', function() {
+
+	before(function(done) {
+	  var handler = [
+	    bc({ symmetric: { key: keys.secretkey } }),
+	    function(req, res, next) {
+	      try {
+		var m = req.bc.decrypt('d9d97c2b267c1be11af605f0682f6e9fbf02d77dd65d4942bdae3053cd4f1eba3c072180');
+	      } catch(ex) {
+		return next(ex);
+	      }
+	    },
+	    function(err, req, res, next) {
+	      res.status(400).json({ error: err.message });
+	    }
+	  ];
+
+	  chai.express.handler(handler)
+	    .end(function(res) {
+	      response = res;
+	      done();
+	    })
+	    .dispatch();
+	});
+
+	it('should error', function(done){
+	  assert.ok(response);
+	  assert.equal(response.statusCode, 400);
+	  assert.equal(typeof response, 'object');
+
+	  assert.ok(response.body.error);
+	  assert.equal(response.body.error, 'Unable to decrypt without nonce.');
 
 	  done();
 	});

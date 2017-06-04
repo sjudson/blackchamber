@@ -13,7 +13,7 @@ const sodium    = require('libsodium');
  *
  */
 function format(ciphertext, nonce) {
-  return 'bc*' + ciphertext + '*' + nonce;
+  return ciphertext + '*' + nonce;
 }
 
 
@@ -27,10 +27,9 @@ function format(ciphertext, nonce) {
  *
  */
 function parse(input) {
-  if (typeof input === 'object') { return [ input, null ]; }
-  // handle non-strings?
+  if (typeof input !== 'string') { return [ input, null ]; }
 
-  var match = /bc\*([0-9a-f]+)\*([0-9a-f]{48})/.exec(input);
+  var match = /([0-9a-f]+)\*([0-9a-f]{48})/.exec(input);
   if (!match) { return [ input, null ]; }
 
   return [ match[1], match[2] ];
@@ -40,7 +39,7 @@ function parse(input) {
 /**
  * sinit
  *
- * Initialize the symmetric cabinet.
+ * initialize the symmetric cabinet
  *
  * @param {Object} config
  * @api private
@@ -79,7 +78,7 @@ function sinit(config) {
 /**
  * ainit
  *
- * Initialize the asymmetric cabinet.
+ * initialize the asymmetric cabinet
  *
  * @param {Object} config
  * @api private
@@ -127,7 +126,7 @@ function ainit(config) {
  * bc
  *
  * The main function, configures the cabinet and returns
- * the middleware that adds it to the express req obj.
+ * the middleware that adds it to the express req object.
  *
  * @param {Object} config
  * @api public
@@ -157,51 +156,112 @@ function bc(name, config) {
   var cabinets = Object.keys(registry);
   if (cabinets.length < 1) { throw new Error('Configuration objects required for middleware.'); }
 
+  const direct = (cabinets.length === 1);
+
 
   /**
-   * cabinetNoir
+   * select
    *
-   * Translated as Black Chamber, the function exposed
-   * at req.bc which may be used to encrypt or decrypt
-   * blobs.
+   * select the cabinet to be used
+   * for the cryptographic operation
    *
-   * @param {object|string} message
-   * @param {string} nonce
-   * @param {string} type
+   * @param {String} specified
    * @api private
    *
    */
-  function cabinetNoir(message, type) {
-    var [message, nonce] = parse(message);
+  function select(specified) {
+    // infer the type if in direct mode
+    type = specified || (direct && cabinets[0]);
 
-    // handle invalid arguments
-    if (!message) {
-      throw new Error('Unable to operate on an empty message.');
-    }
-
-    // if message is an object, stringify it
-    if (typeof message === 'object') {
-      message = JSON.stringify(message);
-    }
-
-    // if we only have one cabinet we will infer it for use
-    if (cabinets.length > 1 && (!type || ['sym', 'asy'].indexOf(type) === -1)) {
+    if (!type || ['sym', 'asy'].indexOf(type) === -1) {
       throw new Error('Please specify \'sym\' (symmetric) or \'asy\' (asymmetric) as the type.');
     }
 
     // prepare and launch the cryptographic operation
-    var base = (type) ? registry[type] : registry[cabinets[0]];
+    var base = registry[type];
     if (!base) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
 
-    var operation = (nonce) ? 'd' : 'e';
+    return base;
+  }
 
-    if (operation === 'e') {
-      return base['e'](message);
-    } else {  // operation === 'd'
-      return base['d'](message, nonce);
+
+  /**
+   * encrypt
+   *
+   * encrypt a message using the denoted cabinet
+   *
+   * @param {Object|String} arg
+   * @api public
+   *
+   */
+  function encrypt(arg) {
+    var type, message;
+
+    function _encrypt(message) {
+      // handle invalid arguments
+      if (!message) {
+	throw new Error('Unable to operate on an empty message.');
+      }
+
+      // if message is an object, stringify it
+      if (typeof message === 'object') {
+	message = JSON.stringify(message);
+      }
+
+      var launch = select(type);
+      return launch['e'](message);
+    }
+
+    if (direct) {
+      message = arg;
+      return _encrypt(message);
+    } else {
+      type = arg;
+      return _encrypt;
     }
   }
 
+
+  /**
+   * decrypt
+   *
+   * decrypt a message using the denoted cabinet
+   *
+   * @param {Object|String} arg
+   * @param {Object|String} opt
+   * @api public
+   *
+   */
+  function decrypt(arg, opt) {
+    var type, message, nonce;
+
+    function _decrypt(message, nonce) {
+      if (!message) {
+	throw new Error('Unable to operate on an empty message.');
+      }
+
+      if (!nonce) {
+	throw new Error('Unable to decrypt without nonce.');
+      }
+
+      var launch = select(type);
+      return launch['d'](message, nonce);
+    }
+
+    if (direct) {
+      var [message, nonce] = (opt)
+	  ? [arg, opt]
+	  : parse(arg);
+
+      return _decrypt(message, nonce);
+    } else {
+      type = arg;
+      return _decrypt;
+    }
+  }
+
+
+  const cabinetNoir = { direct: direct, encrypt: encrypt, decrypt: decrypt };
 
   return function(req, res, next) {
     if (name) {

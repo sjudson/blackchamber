@@ -67,6 +67,9 @@ describe('configuration', function() {
       middleware(req, {}, () => {});
 
       assert.ok(req.bc);
+      assert.ok(req.bc.encrypt);
+      assert.ok(req.bc.decrypt);
+      assert.equal(req.bc.direct, true);
 
       return done();
     });
@@ -153,6 +156,9 @@ describe('configuration', function() {
       middleware(req, {}, () => {});
 
       assert.ok(req.bc);
+      assert.ok(req.bc.encrypt);
+      assert.ok(req.bc.decrypt);
+      assert.equal(req.bc.direct, true);
 
       return done();
     });
@@ -164,6 +170,9 @@ describe('configuration', function() {
       middleware(req, {}, () => {});
 
       assert.ok(req.bc);
+      assert.ok(req.bc.encrypt);
+      assert.ok(req.bc.decrypt);
+      assert.equal(req.bc.direct, true);
 
       return done();
     });
@@ -175,6 +184,9 @@ describe('configuration', function() {
       middleware(req, {}, () => {});
 
       assert.ok(req.bc);
+      assert.ok(req.bc.encrypt);
+      assert.ok(req.bc.decrypt);
+      assert.equal(req.bc.direct, true);
 
       return done();
     });
@@ -186,6 +198,9 @@ describe('configuration', function() {
       middleware(req, {}, () => {});
 
       assert.ok(req.bc);
+      assert.ok(req.bc.encrypt);
+      assert.ok(req.bc.decrypt);
+      assert.equal(req.bc.direct, true);
 
       return done();
     });
@@ -203,6 +218,9 @@ describe('configuration', function() {
       middleware(req, {}, () => {});
 
       assert.ok(req.bc);
+      assert.ok(req.bc.encrypt);
+      assert.ok(req.bc.decrypt);
+      assert.equal(req.bc.direct, false);
 
       return done();
 
