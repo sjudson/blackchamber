@@ -29,8 +29,8 @@ describe('key generation', function() {
       done();
     });
 
-    it('should have a keyType of salsa20poly1305', function(done) {
-      assert.equal(skey.keyType, 'salsa20poly1305');
+    it('should have a keyType of chacha20poly1305', function(done) {
+      assert.equal(skey.keyType, 'chacha20poly1305');
       done();
     });
   });

@@ -285,7 +285,7 @@ function bc(name, config) {
 exports = module.exports = bc;
 
 exports.symkg = () => {
-  return { key: libsodium.crypto_secretbox_keygen('hex'), keyType: 'salsa20poly1305' };
+  return { key: libsodium.crypto_secretbox_keygen('hex'), keyType: 'chacha20poly1305' };
 };
 
 exports.asykg = () => {

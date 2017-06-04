@@ -10,7 +10,7 @@ $ npm i blackchamber
 
 #### Use
 
-The intent of blackchamber is to provide message confidentiality and integrity with the minimal configuration and greatest ease-of-use within Express applications. To accomplish this, it uses Dan Bernstein's [NaCl](https://nacl.cr.yp.to/) suite, implemented in [libsodium](https://download.libsodium.org/doc/) and exposed to Node by [libsodium.js](https://github.com/jedisct1/libsodium.js). More specifically, it employs the Salsa20-Poly1205 AEAD construction, with Diffie-Hellmann Exchange over Curve25519 as a key agreement scheme for its asymmetric mode. For more information, the linked pages on NaCl and libsodium are recommended sources. The library does not currently provide any mechanism for key management - as such, its recommended use is for securing communication between internal services or encryption of state information to be exposed over HTTP.
+The intent of blackchamber is to provide message confidentiality and integrity with the minimal configuration and greatest ease-of-use within Express applications. To accomplish this, it uses Dan Bernstein's [NaCl](https://nacl.cr.yp.to/) suite, implemented in [libsodium](https://download.libsodium.org/doc/) and exposed to Node by [libsodium.js](https://github.com/jedisct1/libsodium.js). More specifically, it employs the ChaCha20-Poly1205 AEAD construction, with Diffie-Hellmann Exchange over Curve25519 as a key agreement scheme for its asymmetric mode. For more information, the linked pages on NaCl and libsodium are recommended sources. The library does not currently provide any mechanism for key management - as such, its recommended use is for securing communication between internal services or encryption of state information to be exposed over HTTP.
 
 ##### Key Generation
 
@@ -20,10 +20,10 @@ Although blackchamber does not provide key management, it does expose key genera
 const blackchamber = require('blackchamber');
 
 var symkey = blackchamber.symkg();
-// { key: 'd905d138cf964a8debf75321340d4301f90839bc20926e9e79ab415aa5e65bac', keyType: 'salsa20poly1305' }  
+// { key: 'd905d138cf964a8debf75321340d4301f90839bc20926e9e79ab415aa5e65bac', keyType: 'chacha20poly1305' }
 
 var asykey = blackchamber.asykg();
-// { publicKey: '3e7f2e4680f56a59a48c091c723cf918f85d8090df65371cf6caaf141521ed62', privateKey:'c981761d12e0d616e092e2fd30cfc2e827ae025e6d039cb7dc51fbafb62873f9', keyType: 'curve25519' }  
+// { publicKey: '3e7f2e4680f56a59a48c091c723cf918f85d8090df65371cf6caaf141521ed62', privateKey:'c981761d12e0d616e092e2fd30cfc2e827ae025e6d039cb7dc51fbafb62873f9', keyType: 'curve25519' }
 ```
 
 ##### Configuration
@@ -50,13 +50,13 @@ If only a symmetric or asymmetric cabinet is configured - but not both - then en
 ```js
 function(req, res, next) {
   var m = 'somemessage';
-  
+
   try {
     var c = req.crypto.encrypt(m);
   } catch(ex) {
     return next(ex);
   }
-  
+
   res.status(200).json({ ciphertext: c });
 }
 ```
@@ -68,13 +68,13 @@ If multiple cabinets are configured simultaneously, then it is required to speci
 ```js
 function(req, res, next) {
   var m = 'somemessage';
-  
+
   try {
     var c = req.crypto.encrypt('sym')(m);
   } catch(ex) {
     return next(ex);
   }
-  
+
   res.status(200).json({ ciphertext: c });
 }
 ```
@@ -89,13 +89,13 @@ Decryption is provided nearly identically, with the distinction that the functio
 // together
 function(req, res, next) {
   var c = '0b0f658b7d8498fdfcb051b8a2dee4416e317b589a0ec32d29c31f9856c8d2b49057c633*14e44349261e3bb87a61a100a493d7a78aa43b83b66d7483';
-  
+
   try {
     var m = req.crypto.decrypt(c);
   } catch(ex) {
     return next(ex);
   }
-  
+
   res.status(200).json({ plaintext: m });
 }
 
@@ -103,13 +103,13 @@ function(req, res, next) {
 function(req, res, next) {
   var c = '0b0f658b7d8498fdfcb051b8a2dee4416e317b589a0ec32d29c31f9856c8d2b49057c633';
   var n = '14e44349261e3bb87a61a100a493d7a78aa43b83b66d7483';
-  
+
   try {
     var m = req.crypto.decrypt(c, n);
   } catch(ex) {
     return next(ex);
   }
-  
+
   res.status(200).json({ plaintext: m });
 }
 
