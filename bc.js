@@ -177,11 +177,7 @@ function bc(name, config) {
       throw new Error('Please specify \'sym\' (symmetric) or \'asy\' (asymmetric) as the type.');
     }
 
-    // prepare and launch the cryptographic operation
-    var base = registry[type];
-    if (!base) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
-
-    return base;
+    return type;
   }
 
 
@@ -208,15 +204,21 @@ function bc(name, config) {
 	message = JSON.stringify(message);
       }
 
-      var launch = select(type);
+      // prepare and launch the cryptographic operation
+      var launch = registry[type];
+      if (!launch) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
+
       return launch['e'](message);
     }
 
     if (direct) {
+      type = select(); // infer type
       message = arg;
+
       return _encrypt(message);
     } else {
-      type = arg;
+      type = select(arg); // send argument as type
+
       return _encrypt;
     }
   }
@@ -236,6 +238,8 @@ function bc(name, config) {
     var type, message, nonce;
 
     function _decrypt(message, nonce) {
+      if (!nonce) { [message, nonce] = parse(message); }
+
       if (!message) {
 	throw new Error('Unable to operate on an empty message.');
       }
@@ -244,18 +248,20 @@ function bc(name, config) {
 	throw new Error('Unable to decrypt without nonce.');
       }
 
-      var launch = select(type);
+      // prepare and launch the cryptographic operation
+      var launch = registry[type];
+      if (!launch) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
+
       return launch['d'](message, nonce);
     }
 
     if (direct) {
-      var [message, nonce] = (opt)
-	  ? [arg, opt]
-	  : parse(arg);
+      type = select(); // infer type
 
-      return _decrypt(message, nonce);
+      return _decrypt(arg, opt);
     } else {
-      type = arg;
+      type = select(arg); // send argument as type
+
       return _decrypt;
     }
   }
