@@ -1,6 +1,6 @@
 {
   "name": "blackchamber",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple confidentiality and message integrity via NaCl as Express middleware.",
   "main": "bc.js",
   "scripts": {
