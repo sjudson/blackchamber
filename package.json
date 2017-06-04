@@ -8,6 +8,11 @@
   },
   "author": "Samuel Judson",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sjudson/blackchamber.git"
+  },
+  "readmeFilename": "README.md",
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-express-handler": "0.0.2",
