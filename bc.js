@@ -22,7 +22,7 @@ function format(ciphertext, nonce) {
  *
  * parse ciphertexts
  *
- * @param {Object|String} input
+ * @param {String} input
  * @api private
  *
  */
