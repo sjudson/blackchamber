@@ -53,21 +53,24 @@ function sinit(config) {
   k = libsodium.from_hex(k);
 
 
-  function enc(m) {
+  function enc(m, done) {
     var n = libsodium.randombytes_buf(sodium._crypto_secretbox_noncebytes());
     var nout = libsodium.to_hex(n);
 
     var c = libsodium.crypto_secretbox_easy(m, n, k, 'hex');
-    return format(c, nout);
+    var cout = format(c, nout);
+
+    return (done) ? done(null, cout) : cout;
   }
 
 
-  function dec(c, n) {
+  function dec(c, n, done) {
     var cin = libsodium.from_hex(c);
     var nin = libsodium.from_hex(n);
 
     var m = libsodium.crypto_secretbox_open_easy(cin, nin, k, 'text');
-    return m;
+
+    return (done) ? done(null, m) : m;
   }
 
 
@@ -100,21 +103,24 @@ function ainit(config) {
   }
 
 
-  function enc(m) {
+  function enc(m, done) {
     var n = libsodium.randombytes_buf(sodium._crypto_box_noncebytes());
     var nout = libsodium.to_hex(n);
 
     var c = libsodium.crypto_box_easy(m, n, pk, sk, 'hex');
-    return format(c, nout);
+    var cout = format(c, nout);
+
+    return (done) ? done(null, cout) : cout;
   }
 
 
-  function dec(c, n) {
+  function dec(c, n, done) {
     var cin = libsodium.from_hex(c);
     var nin = libsodium.from_hex(n);
 
     var m = libsodium.crypto_box_open_easy(cin, nin, pk, sk, 'text');
-    return m;
+
+    return (done) ? done(null, m) : m;
   }
 
 
@@ -188,10 +194,11 @@ function bc(name, config) {
    * encrypt a message using the denoted cabinet
    *
    * @param {Object|String} arg
+   * @param {Function} done
    * @api public
    *
    */
-  function encrypt(arg) {
+  function encrypt(arg, done) {
     var type, message;
 
     function _encrypt(message) {
@@ -209,18 +216,23 @@ function bc(name, config) {
       var launch = registry[type];
       if (!launch) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
 
-      return launch['e'](message);
+      return launch['e'](message, done);
     }
 
-    if (direct) {
-      type = select(); // infer type
-      message = arg;
+    try {
+      if (direct) {
+        type = select(); // infer type
+        message = arg;
 
-      return _encrypt(message);
-    } else {
-      type = select(arg); // send argument as type
+        return _encrypt(message);
+      } else {
+        type = select(arg); // send argument as type
 
-      return _encrypt;
+        return _encrypt;
+      }
+    } catch (ex) {
+      if (!done) { throw ex; }
+      return done(ex);
     }
   }
 
@@ -232,10 +244,15 @@ function bc(name, config) {
    *
    * @param {String} arg
    * @param {String} opt
+   * @param {Function} done
    * @api public
    *
    */
-  function decrypt(arg, opt) {
+  function decrypt(arg, opt, done) {
+    if (opt && typeof opt === 'function') {
+      done = opt;
+      opt = undefined;
+    }
     var type, message, nonce;
 
     function _decrypt(message, nonce) {
@@ -253,17 +270,22 @@ function bc(name, config) {
       var launch = registry[type];
       if (!launch) { throw new Error('Cabinet not initialized for type ' + type + '.'); }
 
-      return launch['d'](message, nonce);
+      return launch['d'](message, nonce, done);
     }
 
-    if (direct) {
-      type = select(); // infer type
+    try {
+      if (direct) {
+        type = select(); // infer type
 
-      return _decrypt(arg, opt);
-    } else {
-      type = select(arg); // send argument as type
+        return _decrypt(arg, opt);
+      } else {
+        type = select(arg); // send argument as type
 
-      return _decrypt;
+        return _decrypt;
+      }
+    } catch (ex) {
+      if (!done) { throw ex; }
+      return done(ex);
     }
   }
 
