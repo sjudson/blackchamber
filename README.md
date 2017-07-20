@@ -48,6 +48,17 @@ All keys must be hex encoded. It is of course recommended as well that they be p
 If only a symmetric or asymmetric cabinet is configured - but not both - then encrypting messages is straightforward.
 
 ```js
+// async
+function(req, res, next) {
+  var m = 'somemessage';
+
+  req.crypto.encrypt(m, function(err, c) {
+    if (err) { return next(err); }
+    res.status(200).json({ ciphertext: c });
+  });
+}
+
+// sync
 function(req, res, next) {
   var m = 'somemessage';
 
@@ -66,6 +77,19 @@ It is recommended that the message be a string. However, if an object is sent, t
 If multiple cabinets are configured simultaneously, then it is required to specify which one should be used. In such a case, the original function call will expose an internal function to actually handle the encryption.
 
 ```js
+// async
+function(req, res, next) {
+  var m = 'somemessage';
+
+  function encrypted(err, c) {
+    if (err) { return next(err); }
+    res.status(200).json({ ciphertext: c });
+  }
+
+  return req.crypto.encrypt('sym', encrypted)(m);
+}
+
+// sync
 function(req, res, next) {
   var m = 'somemessage';
 
@@ -79,27 +103,24 @@ function(req, res, next) {
 }
 ```
 
-The caller must provide `sym` for the symmetric cabinet, and `asy` for the `asymmetric` one. Whether or not this indicator must be programmatically provided can be checked by `req.crypto.direct`. If `true`, then it is unneccesary.
+The caller must provide `sym` for the symmetric cabinet, and `asy` for the `asymmetric` one. Whether or not this indicator must be programmatically provided can be checked by `req[name]['direct']`. If `true`, then it is unneccesary.
 
 ##### Decryption
 
 Decryption is provided nearly identically, with the distinction that the function takes two arguments, `message` and `nonce`. However, if you provide them as a single string joined with a star (matching the output of the encryption function) then it'll properly parse it for you. Both the `message` and `nonce` components of the ciphertext must be hex encoded.
 
 ```js
-// together
+// together (async)
 function(req, res, next) {
   var c = '0b0f658b7d8498fdfcb051b8a2dee4416e317b589a0ec32d29c31f9856c8d2b49057c633*14e44349261e3bb87a61a100a493d7a78aa43b83b66d7483';
 
-  try {
-    var m = req.crypto.decrypt(c);
-  } catch(ex) {
-    return next(ex);
-  }
-
-  res.status(200).json({ plaintext: m });
+  req.crypto.decrypt(c, function(err, m) {
+    if (err) { return next(err); }
+    res.status(200).json({ plaintext: m });
+  });
 }
 
-// separated
+// separated (sync)
 function(req, res, next) {
   var c = '0b0f658b7d8498fdfcb051b8a2dee4416e317b589a0ec32d29c31f9856c8d2b49057c633';
   var n = '14e44349261e3bb87a61a100a493d7a78aa43b83b66d7483';
