@@ -219,6 +219,11 @@ function bc(name, config) {
       return launch['e'](message, done);
     }
 
+    function ehandle(err) {
+      if (!done) { throw err; }
+      return done(err);
+    }
+
     try {
       if (direct) {
         type = select(); // infer type
@@ -228,11 +233,18 @@ function bc(name, config) {
       } else {
         type = select(arg); // send argument as type
 
-        return _encrypt;
+        function wrapped(message) {
+          try {
+            return _encrypt(message);
+          } catch (ex) {
+            return ehandle(ex);
+          }
+        }
+
+        return wrapped;
       }
     } catch (ex) {
-      if (!done) { throw ex; }
-      return done(ex);
+      ehandle(ex);
     }
   }
 
@@ -273,6 +285,11 @@ function bc(name, config) {
       return launch['d'](message, nonce, done);
     }
 
+    function ehandle(err) {
+      if (!done) { throw err; }
+      return done(err);
+    }
+
     try {
       if (direct) {
         type = select(); // infer type
@@ -281,11 +298,18 @@ function bc(name, config) {
       } else {
         type = select(arg); // send argument as type
 
-        return _decrypt;
+        function wrapped(message, nonce) {
+          try {
+            return _decrypt(message, nonce);
+          } catch (ex) {
+            return ehandle(ex);
+          }
+        }
+
+        return wrapped;
       }
     } catch (ex) {
-      if (!done) { throw ex; }
-      return done(ex);
+      return ehandle(ex);
     }
   }
 
